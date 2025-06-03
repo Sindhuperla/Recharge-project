@@ -1,0 +1,251 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdbool.h>
+struct User {
+    char name[100];
+    int age;
+    char mobile[11];
+    char password[20];
+    int balance;
+    char rechargeHistory[5][100];
+    int rechargeCount;
+};
+
+struct Plan {
+    char company[20];
+    char planName[50];
+    int amount;
+};
+struct User users[100];
+int userCount = 0;
+
+struct Plan plans[] = {
+    {"Airtel", "Prepaid 199 (1.5GB/day)", 199},
+    {"Airtel", "Prepaid 399 (3GB/day)", 399},
+    {"Jio", "Prepaid 149 (1.5GB/day)", 149},
+    {"Jio", "Prepaid 299 (2GB/day)", 299},
+    {"Reliance", "Prepaid 199 (Unlimited calls)", 199},
+    {"Reliance", "Prepaid 349 (2.5GB/day)", 349},
+    {"VI", "Prepaid 249 (1.5GB/day)", 249},
+    {"VI", "Prepaid 449 (3GB/day)", 449}
+};
+int planCount = sizeof(plans) / sizeof(plans[0]);
+bool is_alpha_string(char str[]);
+bool is_numeric_string(char str[]);
+void signup();
+void login();
+void rechargeMenu(int userIndex);
+void addBalance(int userIndex);
+void showRechargeHistory(int userIndex);
+
+int main() {
+    int choice;
+    while (1) {
+        printf("\n========= Mobile Recharge System =========\n");
+        printf("1) Signup\n2) Login\n3) Exit\nChoose: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: signup(); break;
+            case 2: login(); break;
+            case 3: printf("Thank you! Exiting the system.\n"); return 0;
+            default: printf("Invalid choice! Try again.\n");
+        }
+    }
+}
+bool is_alpha_string(char str[]) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (!isalpha(str[i]))
+            return false;
+    }
+    return true;
+}
+bool is_numeric_string(char str[]) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (!isdigit(str[i]))
+            return false;
+    }
+    return true;
+}
+void signup() {
+    char name[100], mobile[11], password1[20], password2[20];
+    int age;
+
+    printf("\n--- Signup ---\n");
+
+    printf("Enter your name: ");
+    scanf("%s", name);
+    if (!is_alpha_string(name)) {
+        printf("Name should contain only alphabets!\n");
+        return;
+    }
+
+    printf("Enter your age: ");
+    scanf("%d", &age);
+    if (age < 1 || age > 120) {
+        printf("Invalid age!\n");
+        return;
+    }
+
+    printf("Enter your 10-digit mobile number: ");
+    scanf("%s", mobile);
+    if (strlen(mobile) != 10 || !is_numeric_string(mobile)) {
+        printf("Invalid mobile number!\n");
+        return;
+    }
+
+    for (int i = 0; i < userCount; i++) {
+        if (strcmp(users[i].mobile, mobile) == 0) {
+            printf("Mobile number already registered. Try login.\n");
+            return;
+        }
+    }
+
+    printf("Set a password (min 4 characters). Suggestion: Abc@1234\n");
+    scanf("%s", password1);
+    if (strlen(password1) < 4) {
+        printf("Password too short!\n");
+        return;
+    }
+
+    printf("Confirm password: ");
+    scanf("%s", password2);
+    if (strcmp(password1, password2) != 0) {
+        printf("Passwords do not match!\n");
+        return;
+    }
+    strcpy(users[userCount].name, name);
+    users[userCount].age = age;
+    strcpy(users[userCount].mobile, mobile);
+    strcpy(users[userCount].password, password1);
+    users[userCount].balance = 0;
+    users[userCount].rechargeCount = 0;
+    userCount++;
+
+    printf("Signup successful! Please login.\n");
+}
+void login() {
+    char mobile[11], password[20];
+    printf("\n--- Login ---\n");
+    printf("Enter mobile number: ");
+    scanf("%s", mobile);
+    printf("Enter password: ");
+    scanf("%s", password);
+
+    for (int i = 0; i < userCount; i++) {
+        if (strcmp(users[i].mobile, mobile) == 0) {
+            if (strcmp(users[i].password, password) == 0) {
+                printf("\n?? Welcome, %s! Login Successful. ??\n", users[i].name);
+                rechargeMenu(i);
+                return;
+            } else {
+                printf("Incorrect password!\n");
+                return;
+            }
+        }
+    }
+    printf("Account not found! Please signup.\n");
+}
+void rechargeMenu(int userIndex) {
+    int choice;
+    while (1) {
+        printf("\n====== Recharge Menu ======\n");
+        printf("Wallet Balance: Rs %d\n", users[userIndex].balance);
+        printf("1) Recharge\n2) Add Balance\n3) View History\n4) Logout\nChoose: ");
+        scanf("%d", &choice);
+
+        if (choice == 1) {
+            int companyChoice, planChoice;
+            printf("Available Companies:\n");
+            printf("1) Airtel\n2) Jio\n3) Reliance\n4) VI\nChoose: ");
+            scanf("%d", &companyChoice);
+
+            if (companyChoice < 1 || companyChoice > 4) {
+                printf("Invalid company choice!\n");
+                continue;
+            }
+
+            printf("Available Plans:\n");
+            int count = 0;
+            for (int i = 0; i < planCount; i++) {
+                if ((companyChoice == 1 && strcmp(plans[i].company, "Airtel") == 0) ||
+                    (companyChoice == 2 && strcmp(plans[i].company, "Jio") == 0) ||
+                    (companyChoice == 3 && strcmp(plans[i].company, "Reliance") == 0) ||
+                    (companyChoice == 4 && strcmp(plans[i].company, "VI") == 0)) {
+                    printf("%d) %s - Rs %d\n", count + 1, plans[i].planName, plans[i].amount);
+                    count++;
+                }
+            }
+
+            printf("Choose a plan (or 0 to go back): ");
+            scanf("%d", &planChoice);
+            if (planChoice == 0) continue;
+            if (planChoice < 1 || planChoice > count) {
+                printf("Invalid plan!\n");
+                continue;
+            }
+
+            int actualIndex = -1, counter = 0;
+            for (int i = 0; i < planCount; i++) {
+                if ((companyChoice == 1 && strcmp(plans[i].company, "Airtel") == 0) ||
+                    (companyChoice == 2 && strcmp(plans[i].company, "Jio") == 0) ||
+                    (companyChoice == 3 && strcmp(plans[i].company, "Reliance") == 0) ||
+                    (companyChoice == 4 && strcmp(plans[i].company, "VI") == 0)) {
+                    counter++;
+                    if (counter == planChoice) {
+                        actualIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (users[userIndex].balance >= plans[actualIndex].amount) {
+                users[userIndex].balance -= plans[actualIndex].amount;
+                printf("? Recharge Successful: %s - Rs %d\n", plans[actualIndex].planName, plans[actualIndex].amount);
+                if (users[userIndex].rechargeCount < 5) {
+                    sprintf(users[userIndex].rechargeHistory[users[userIndex].rechargeCount], "%s - Rs %d", plans[actualIndex].planName, plans[actualIndex].amount);
+                    users[userIndex].rechargeCount++;
+                } else {
+                    for (int j = 1; j < 5; j++) {
+                        strcpy(users[userIndex].rechargeHistory[j - 1], users[userIndex].rechargeHistory[j]);
+                    }
+                    sprintf(users[userIndex].rechargeHistory[4], "%s - Rs %d", plans[actualIndex].planName, plans[actualIndex].amount);
+                }
+            } else {
+                printf("? Not enough balance. Please add funds.\n");
+            }
+
+        } else if (choice == 2) {
+            addBalance(userIndex);
+        } else if (choice == 3) {
+            showRechargeHistory(userIndex);
+        } else if (choice == 4) {
+            printf("Logging out...\n");
+            return;
+        } else {
+            printf("Invalid choice.\n");
+        }
+    }
+}
+void addBalance(int userIndex) {
+    int amount;
+    printf("Enter amount to add: Rs ");
+    scanf("%d", &amount);
+    if (amount <= 0) {
+        printf("Invalid amount!\n");
+        return;
+    }
+    users[userIndex].balance += amount;
+    printf("? Rs %d added. New Balance: Rs %d\n", amount, users[userIndex].balance);
+}
+void showRechargeHistory(int userIndex) {
+    printf("\n--- Last %d Recharges ---\n", users[userIndex].rechargeCount);
+    if (users[userIndex].rechargeCount == 0) {
+        printf("No recharges found.\n");
+    } else {
+        for (int i = 0; i < users[userIndex].rechargeCount; i++) {
+            printf("%d) %s\n", i + 1, users[userIndex].rechargeHistory[i]);
+        }
+    }
+}
